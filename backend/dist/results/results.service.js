@@ -31,11 +31,25 @@ let ResultsService = class ResultsService {
         if (!userExists) {
             throw new common_1.NotFoundException('User not found');
         }
-        const result = this.resultsRepository.create({
-            ...createResultDto,
-            userId,
-        });
-        return this.resultsRepository.save(result);
+        const mode = createResultDto.mode;
+        if (mode === result_mode_enum_1.ResultMode.STOPWATCH) {
+            const created = this.resultsRepository.create({ ...createResultDto, userId });
+            return this.resultsRepository.save(created);
+        }
+        const existing = await this.resultsRepository.findOne({ where: { userId, mode } });
+        if (!existing) {
+            const created = this.resultsRepository.create({ ...createResultDto, userId });
+            return this.resultsRepository.save(created);
+        }
+        const shouldReplace = mode === result_mode_enum_1.ResultMode.GPS
+            ? createResultDto.maxSpeed > existing.maxSpeed
+            : createResultDto.time < existing.time;
+        if (!shouldReplace)
+            return existing;
+        existing.maxSpeed = createResultDto.maxSpeed;
+        existing.time = createResultDto.time;
+        existing.distance = createResultDto.distance;
+        return this.resultsRepository.save(existing);
     }
     getGlobalLeaderboard(query) {
         return this.buildLeaderboardQuery(query.mode).getMany();

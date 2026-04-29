@@ -61,10 +61,8 @@ export const loginByPhone = async (
 };
 
 export const submitResult = async (result: TrackingResult): Promise<void> => {
-  const backendMode: BackendMode =
-    result.mode === 'STOPWATCH' ? 'GPS' : (result.mode as BackendMode);
   await api.post('/results', {
-    mode: backendMode,
+    mode: result.mode as BackendMode,
     maxSpeed: result.maxSpeed,
     time: result.time,
     distance: result.distance,

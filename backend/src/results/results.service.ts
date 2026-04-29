@@ -21,11 +21,35 @@ export class ResultsService {
     if (!userExists) {
       throw new NotFoundException('User not found');
     }
-    const result = this.resultsRepository.create({
-      ...createResultDto,
-      userId,
-    });
-    return this.resultsRepository.save(result);
+
+    const mode = createResultDto.mode;
+
+    // BEST-ONLY rules:
+    // - GPS: keep maxSpeed DESC
+    // - RACE_201 / RACE_402: keep time ASC
+    // - STOPWATCH: keep ALL records (do not replace)
+    if (mode === ResultMode.STOPWATCH) {
+      const created = this.resultsRepository.create({ ...createResultDto, userId });
+      return this.resultsRepository.save(created);
+    }
+
+    const existing = await this.resultsRepository.findOne({ where: { userId, mode } });
+    if (!existing) {
+      const created = this.resultsRepository.create({ ...createResultDto, userId });
+      return this.resultsRepository.save(created);
+    }
+
+    const shouldReplace =
+      mode === ResultMode.GPS
+        ? createResultDto.maxSpeed > existing.maxSpeed
+        : createResultDto.time < existing.time;
+
+    if (!shouldReplace) return existing;
+
+    existing.maxSpeed = createResultDto.maxSpeed;
+    existing.time = createResultDto.time;
+    existing.distance = createResultDto.distance;
+    return this.resultsRepository.save(existing);
   }
 
   getGlobalLeaderboard(query: LeaderboardQueryDto) {
