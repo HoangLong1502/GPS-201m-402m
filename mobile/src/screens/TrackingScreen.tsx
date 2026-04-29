@@ -128,6 +128,11 @@ export const TrackingScreen = ({ route, navigation }: Props) => {
           <Text style={styles.speedPriorityValue}>{tracking.currentSpeed.toFixed(1)}</Text>
           <Text style={styles.speedPriorityUnit}>km/h</Text>
         </View>
+      ) : isStopwatchMode ? (
+        <View style={styles.stopwatchSpeedWrap}>
+          <Text style={styles.stopwatchSpeedValue}>{tracking.currentSpeed.toFixed(1)}</Text>
+          <Text style={styles.stopwatchSpeedUnit}>km/h</Text>
+        </View>
       ) : (
         <Text style={styles.speed}>{formatSpeed(tracking.currentSpeed)}</Text>
       )}
@@ -173,6 +178,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   speed: { color: '#ff3b3b', fontSize: 44, fontWeight: '900' },
+  stopwatchSpeedWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 2 },
+  stopwatchSpeedValue: { color: '#ff3b3b', fontSize: 74, fontWeight: '900', lineHeight: 74 },
+  stopwatchSpeedUnit: { color: '#ffd7d7', fontSize: 22, fontWeight: '800', marginBottom: 10 },
   stopwatchPill: { backgroundColor: '#121212', borderWidth: 1, borderColor: '#2f2f2f', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' },
   stopwatchPillLabel: { color: '#ffd166', fontWeight: '900', letterSpacing: 2, fontSize: 12 },
   stopwatchPillValue: { color: '#ff4d4f', fontWeight: '900', fontSize: 20, lineHeight: 22 },

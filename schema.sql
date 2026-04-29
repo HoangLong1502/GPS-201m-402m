@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'results_mode_enum') THEN
-    CREATE TYPE results_mode_enum AS ENUM ('GPS', 'RACE_201', 'RACE_402');
+    CREATE TYPE results_mode_enum AS ENUM ('GPS', 'STOPWATCH', 'RACE_201', 'RACE_402');
   END IF;
 END$$;
 

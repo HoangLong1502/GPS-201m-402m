@@ -56,7 +56,7 @@ export const HomeScreen = ({ navigation }: Props) => {
       </Pressable>
 
       <Pressable style={styles.donateButton} onPress={() => setShowDonateModal(true)}>
-        <Text style={styles.donateButtonText}>Ủng hộ bánh mì mình nha ae =))</Text>
+        <Text style={styles.donateButtonText}>Ấn vào đây để donate, cảm ơn ae =))</Text>
       </Pressable>
 
       <Modal visible={showDonateModal} transparent animationType="fade" onRequestClose={() => setShowDonateModal(false)}>

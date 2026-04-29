@@ -1,6 +1,6 @@
-export type BackendMode = 'GPS' | 'RACE_201' | 'RACE_402';
-export type Mode = BackendMode | 'STOPWATCH';
-export type LeaderboardMode = BackendMode;
+export type BackendMode = 'GPS' | 'STOPWATCH' | 'RACE_201' | 'RACE_402';
+export type Mode = BackendMode;
+export type LeaderboardMode = 'GPS' | 'RACE_201' | 'RACE_402';
 
 export interface UserProfile {
   id: string;
