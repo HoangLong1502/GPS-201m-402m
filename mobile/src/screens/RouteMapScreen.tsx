@@ -53,16 +53,43 @@ export const RouteMapScreen = ({ navigation }: Props) => {
         </View>
       )}
 
-      <Text style={styles.item}>
-        Quãng đường: {latestResult.distance.toFixed(1)} m
-      </Text>
-      <Text style={styles.item}>Thời gian: {formatTime(latestResult.time)}</Text>
-      {isStopwatchMode && (
-        <Text style={styles.item}>
-          Tốc độ trung bình: {formatSpeed(latestResult.avgSpeed ?? 0)}
-        </Text>
-      )}
-      <Text style={styles.item}>Tốc độ tối đa: {formatSpeed(latestResult.maxSpeed)}</Text>
+      <View style={styles.summaryGrid}>
+        <View style={styles.summaryDash}>
+          <View style={styles.summaryLedRow}>
+            {Array.from({ length: 12 }, (_, idx) => (
+              <View key={`result-led-${idx}`} style={[styles.summaryLedDot, idx < 9 ? styles.summaryLedOn : styles.summaryLedOff]} />
+            ))}
+          </View>
+          <View style={styles.summaryTopRow}>
+            <View style={styles.summaryTopCell}>
+              <Text style={styles.summaryTopLabel}>RESULT</Text>
+              <Text style={styles.summaryTopValue}>STOPWATCH</Text>
+            </View>
+            <View style={styles.summaryTopCell}>
+              <Text style={styles.summaryTopLabel}>TIME</Text>
+              <Text style={styles.summaryTopValue}>{formatTime(latestResult.time)}</Text>
+            </View>
+          </View>
+          <View style={styles.summaryMetricRow}>
+            <View style={styles.summaryMetricCell}>
+              <Text style={styles.summaryMetricLabel}>DISTANCE</Text>
+              <Text style={styles.summaryMetricValue}>{latestResult.distance.toFixed(1)} m</Text>
+            </View>
+            <View style={styles.summaryMetricCell}>
+              <Text style={styles.summaryMetricLabel}>MAX SPEED</Text>
+              <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.maxSpeed)}</Text>
+            </View>
+          </View>
+          {isStopwatchMode && (
+            <View style={styles.summaryMetricRow}>
+              <View style={styles.summaryMetricCellWide}>
+                <Text style={styles.summaryMetricLabel}>AVG SPEED</Text>
+                <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.avgSpeed ?? 0)}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
 
       <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
         <Text style={styles.buttonLabel}>Hoàn tất</Text>
@@ -74,7 +101,53 @@ export const RouteMapScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#090909', padding: 18, alignItems: 'center' },
   title: { color: '#ff4d4f', fontSize: 26, fontWeight: '900', marginTop: 6, marginBottom: 10 },
-  item: { color: 'white', fontSize: 18, marginTop: 6 },
+  summaryGrid: { width: '100%', marginTop: 4 },
+  summaryDash: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#2a2a2a',
+    backgroundColor: '#0d0d0d',
+    padding: 10,
+    gap: 8,
+  },
+  summaryLedRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+  summaryLedDot: { width: 12, height: 12, borderRadius: 6 },
+  summaryLedOn: { backgroundColor: '#5aa9ff' },
+  summaryLedOff: { backgroundColor: '#1b2a3f' },
+  summaryTopRow: { flexDirection: 'row', gap: 8 },
+  summaryTopCell: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#252525',
+    backgroundColor: '#141414',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  summaryTopLabel: { color: '#7ed1ff', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  summaryTopValue: { color: '#f2f2f2', fontSize: 14, fontWeight: '900', marginTop: 2 },
+  summaryMetricRow: { flexDirection: 'row', gap: 8 },
+  summaryMetricCell: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2b2b2b',
+    backgroundColor: '#151515',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  summaryMetricCellWide: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#393118',
+    backgroundColor: '#1a160e',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  summaryMetricLabel: { color: '#89d8ff', fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  summaryMetricValue: { color: '#fff', fontSize: 22, fontWeight: '900' },
   mapFallback: {
     width: '100%',
     height: 240,

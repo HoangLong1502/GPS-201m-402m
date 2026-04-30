@@ -12,15 +12,16 @@ export const LeaderboardScreen = () => {
   const [mode, setMode] = useState<LeaderboardMode>('GPS');
   const [globalData, setGlobalData] = useState<LeaderboardItem[]>([]);
   const [vehicleData, setVehicleData] = useState<LeaderboardItem[]>([]);
+  const [showVehicleBoard, setShowVehicleBoard] = useState(false);
 
   useEffect(() => {
     fetchLeaderboard(mode).then(setGlobalData).catch(() => setGlobalData([]));
-    if (user?.vehicleName) {
+    if (showVehicleBoard && user?.vehicleName) {
       fetchLeaderboard(mode, user.vehicleName).then(setVehicleData).catch(() => setVehicleData([]));
     } else {
       setVehicleData([]);
     }
-  }, [mode, user?.vehicleName]);
+  }, [mode, user?.vehicleName, showVehicleBoard]);
 
   const renderRow = ({ item, index }: { item: LeaderboardItem; index: number }) => (
     <View style={styles.row}>
@@ -72,13 +73,22 @@ export const LeaderboardScreen = () => {
       />
       {user?.vehicleName && (
         <>
-          <Text style={styles.section}>Theo xe: {user.vehicleName}</Text>
-          <FlatList
-            data={vehicleData}
-            keyExtractor={(item) => `${item.id}-vehicle`}
-            renderItem={renderRow}
-            style={styles.list}
-          />
+          <Pressable style={styles.vehicleToggleBtn} onPress={() => setShowVehicleBoard((prev) => !prev)}>
+            <Text style={styles.vehicleToggleLabel}>
+              {showVehicleBoard ? 'Ẩn xếp hạng theo xe' : `Xem xếp hạng theo xe: ${user.vehicleName}`}
+            </Text>
+          </Pressable>
+          {showVehicleBoard && (
+            <>
+              <Text style={styles.section}>Theo xe: {user.vehicleName}</Text>
+              <FlatList
+                data={vehicleData}
+                keyExtractor={(item) => `${item.id}-vehicle`}
+                renderItem={renderRow}
+                style={styles.list}
+              />
+            </>
+          )}
         </>
       )}
     </View>
@@ -93,6 +103,17 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: '#b82020', borderColor: '#ff6767' },
   tabLabel: { color: 'white', fontWeight: '700' },
   section: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 8, marginBottom: 6 },
+  vehicleToggleBtn: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#b82020',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  vehicleToggleLabel: { color: '#ffb3b3', fontWeight: '700', textAlign: 'center' },
   list: { maxHeight: 180, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#161616', padding: 10, borderRadius: 10, marginBottom: 8, gap: 10, borderWidth: 1, borderColor: '#2f2f2f' },
   rank: { color: '#ff7676', width: 34, fontWeight: '800' },

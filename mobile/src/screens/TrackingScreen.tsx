@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import { RootStackParamList } from '../AppNavigator';
 import { useTracking } from '../hooks/useTracking';
+import { useEngineSoundMeter } from '../hooks/useEngineSoundMeter';
 import { formatSpeed, formatTime } from '../utils';
 import { submitResult } from '../api';
 import { useAppContext } from '../context/AppContext';
@@ -17,31 +17,19 @@ export const TrackingScreen = ({ route, navigation }: Props) => {
   const isRaceMode = mode === 'RACE_201' || mode === 'RACE_402';
   const isGpsMode = mode === 'GPS';
   const isStopwatchMode = mode === 'STOPWATCH';
-  const gaugeStart = -210;
-  const gaugeEnd = 30;
-  const gaugeSpan = gaugeEnd - gaugeStart;
-  const speedForNeedle = Math.max(10, Math.min(250, tracking.currentSpeed));
-  const needleAngle = gaugeStart + ((speedForNeedle - 10) / 240) * gaugeSpan;
-  const majorTicks = [10, 50, 90, 130, 170, 210, 250];
-  const minorTicks = Array.from({ length: 25 }, (_, i) => 10 + i * 10);
   const avgSpeedNow =
     tracking.elapsed > 0 ? (tracking.distance / tracking.elapsed) * 3.6 : 0;
+  const { activeLeds } = useEngineSoundMeter(tracking.isRunning);
 
-  const polarToCartesian = (cx: number, cy: number, radius: number, angleDeg: number) => {
-    const angle = (angleDeg * Math.PI) / 180;
-    return {
-      x: cx + radius * Math.cos(angle),
-      y: cy + radius * Math.sin(angle),
+  useLayoutEffect(() => {
+    const titleByMode: Record<string, string> = {
+      GPS: 'bấm max GPS',
+      STOPWATCH: 'Bấm giờ quãng đường',
+      RACE_201: 'Drag 201m',
+      RACE_402: 'Drag 402m',
     };
-  };
-
-  const arcPath = (cx: number, cy: number, radius: number, startAngle: number, endAngle: number) => {
-    const start = polarToCartesian(cx, cy, radius, startAngle);
-    const end = polarToCartesian(cx, cy, radius, endAngle);
-    const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
-    const sweepFlag = endAngle > startAngle ? 1 : 0;
-    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${end.x} ${end.y}`;
-  };
+    navigation.setOptions({ title: titleByMode[mode] ?? 'Theo Dõi Tốc Độ' });
+  }, [mode, navigation]);
 
   const onReady = async () => {
     if (!user) {
@@ -71,6 +59,10 @@ export const TrackingScreen = ({ route, navigation }: Props) => {
     await tracking.finish();
   };
 
+  const primaryValue = isRaceMode ? formatTime(tracking.elapsed) : tracking.currentSpeed.toFixed(1);
+  const primaryUnit = isRaceMode ? 'sec' : 'km/h';
+  const ledColorStyle = isRaceMode ? styles.ledRed : isStopwatchMode ? styles.ledBlue : styles.ledGreen;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -83,65 +75,66 @@ export const TrackingScreen = ({ route, navigation }: Props) => {
         )}
       </View>
 
-      <View style={styles.gaugeWrap}>
-        <Svg width={310} height={220}>
-          <Path d={arcPath(155, 165, 120, gaugeStart, gaugeEnd)} stroke="#351212" strokeWidth={20} fill="none" />
-          <Path d={arcPath(155, 165, 120, gaugeStart, gaugeEnd)} stroke="#ff3b3b" strokeWidth={7} fill="none" />
-
-          {minorTicks.map((value) => {
-            const angle = gaugeStart + ((value - 10) / 240) * gaugeSpan;
-            const p1 = polarToCartesian(155, 165, 102, angle);
-            const p2 = polarToCartesian(155, 165, 114, angle);
-            return <Line key={`minor-${value}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#8a4a4a" strokeWidth={1.5} />;
-          })}
-
-          {majorTicks.map((value) => {
-            const angle = gaugeStart + ((value - 10) / 240) * gaugeSpan;
-            const p1 = polarToCartesian(155, 165, 95, angle);
-            const p2 = polarToCartesian(155, 165, 116, angle);
-            const label = polarToCartesian(155, 165, 78, angle);
-            return (
-              <React.Fragment key={`major-${value}`}>
-                <Line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#ffe3e3" strokeWidth={2.5} />
-                <SvgText x={label.x} y={label.y + 4} fill="#ffd0d0" fontSize="12" fontWeight="700" textAnchor="middle">
-                  {value}
-                </SvgText>
-              </React.Fragment>
-            );
-          })}
-
-          <Line
-            x1={155}
-            y1={165}
-            x2={polarToCartesian(155, 165, 86, needleAngle).x}
-            y2={polarToCartesian(155, 165, 86, needleAngle).y}
-            stroke="#ffd166"
-            strokeWidth={4}
-            strokeLinecap="round"
-          />
-          <Circle cx={155} cy={165} r={10} fill="#ffd166" stroke="#6a4f16" strokeWidth={2} />
-        </Svg>
+      <View style={styles.primaryTopCard}>
+        <Text style={styles.primaryTopLabel}>{isRaceMode ? 'RACE TIME' : 'LIVE SPEED'}</Text>
+        <View style={styles.primaryTopValueRow}>
+          <Text style={styles.primaryTopValue} numberOfLines={1} adjustsFontSizeToFit>
+            {primaryValue}
+          </Text>
+          <Text style={styles.primaryTopUnit}>{primaryUnit}</Text>
+        </View>
       </View>
 
-      {isRaceMode ? (
-        <View style={styles.speedPriorityWrap}>
-          <Text style={styles.speedPriorityValue}>{tracking.currentSpeed.toFixed(1)}</Text>
-          <Text style={styles.speedPriorityUnit}>km/h</Text>
+      <View style={styles.cockpitShell}>
+        <View style={styles.ledRow}>
+          {Array.from({ length: 12 }, (_, idx) => (
+            <View
+              key={`led-${idx}`}
+              style={[
+                styles.ledDot,
+                idx < activeLeds ? ledColorStyle : styles.ledOff,
+                idx < activeLeds && styles.ledGlow,
+              ]}
+            />
+          ))}
         </View>
-      ) : isStopwatchMode ? (
-        <View style={styles.stopwatchSpeedWrap}>
-          <Text style={styles.stopwatchSpeedValue}>{tracking.currentSpeed.toFixed(1)}</Text>
-          <Text style={styles.stopwatchSpeedUnit}>km/h</Text>
+        <View style={styles.cockpitTopRow}>
+          <View style={styles.smallPanel}>
+            <Text style={styles.smallPanelLabel}>MODE</Text>
+            <Text style={styles.smallPanelValue}>{mode}</Text>
+          </View>
+          <View style={styles.smallPanel}>
+            <Text style={styles.smallPanelLabel}>TIME</Text>
+            <Text style={styles.smallPanelValue}>{formatTime(tracking.elapsed)}</Text>
+          </View>
+          <View style={styles.smallPanel}>
+            <Text style={styles.smallPanelLabel}>{isRaceMode ? 'TARGET' : 'MAX'}</Text>
+            <Text style={styles.smallPanelValue}>{isRaceMode ? (mode === 'RACE_201' ? '201m' : '402m') : formatSpeed(tracking.maxSpeed)}</Text>
+          </View>
         </View>
-      ) : (
-        <Text style={styles.speed}>{formatSpeed(tracking.currentSpeed)}</Text>
-      )}
-      <Text style={styles.meta}>Tốc độ tối đa: {formatSpeed(tracking.maxSpeed)}</Text>
-      <Text style={styles.meta}>Quãng đường: {tracking.distance.toFixed(1)} m</Text>
-      {isStopwatchMode && (
-        <Text style={styles.meta}>Tốc độ trung bình: {formatSpeed(avgSpeedNow)}</Text>
-      )}
-      {isStopwatchMode && <Text style={styles.meta}>Thời gian: {formatTime(tracking.elapsed)}</Text>}
+        <View style={styles.cockpitGrid}>
+          <View style={styles.sideColumn}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>{isRaceMode ? 'SPEED' : 'MAX SPEED'}</Text>
+              <Text style={styles.metricValue}>{isRaceMode ? formatSpeed(tracking.currentSpeed) : formatSpeed(tracking.maxSpeed)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>DISTANCE</Text>
+              <Text style={styles.metricValue}>{tracking.distance.toFixed(1)} m</Text>
+            </View>
+          </View>
+          <View style={styles.sideColumn}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>{isRaceMode ? 'MAX SPEED' : 'AVG SPEED'}</Text>
+              <Text style={styles.metricValue}>{isRaceMode ? formatSpeed(tracking.maxSpeed) : formatSpeed(avgSpeedNow)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>{isRaceMode ? 'STATUS' : 'GPS STATE'}</Text>
+              <Text style={styles.metricValue}>{tracking.accuracyWarning ? 'LOW ACC' : 'READY'}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
       {tracking.countdown !== null && (
         <Text style={styles.countdown}>{tracking.countdown === 0 ? 'BẮT ĐẦU' : tracking.countdown}</Text>
       )}
@@ -170,24 +163,68 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050505', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 },
   headerRow: { width: '100%', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   mode: { color: '#ff9797', letterSpacing: 1.5, fontWeight: '700' },
-  gaugeWrap: {
-    width: 310,
-    height: 210,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
+  primaryTopCard: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#3a3218',
+    backgroundColor: '#17140c',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  speed: { color: '#ff3b3b', fontSize: 44, fontWeight: '900' },
-  stopwatchSpeedWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 2 },
-  stopwatchSpeedValue: { color: '#ff3b3b', fontSize: 74, fontWeight: '900', lineHeight: 74 },
-  stopwatchSpeedUnit: { color: '#ffd7d7', fontSize: 22, fontWeight: '800', marginBottom: 10 },
+  primaryTopLabel: { color: '#f7d46a', fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
+  primaryTopValueRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginTop: 2 },
+  primaryTopValue: { color: '#f8ef52', fontSize: 60, fontWeight: '900', lineHeight: 62, flexShrink: 1 },
+  primaryTopUnit: { color: '#f7d46a', fontSize: 20, fontWeight: '800', marginBottom: 8 },
+  cockpitShell: {
+    width: '100%',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#232323',
+    backgroundColor: '#0b0b0b',
+  },
+  ledRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 2 },
+  ledDot: { width: 14, height: 14, borderRadius: 7 },
+  ledGreen: { backgroundColor: '#34e56f' },
+  ledBlue: { backgroundColor: '#5aa9ff' },
+  ledRed: { backgroundColor: '#ff5a5a' },
+  ledOff: { backgroundColor: '#1b2a3f' },
+  ledGlow: {
+    shadowColor: '#9fd2ff',
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+  },
+  cockpitTopRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  smallPanel: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#262626',
+    backgroundColor: '#121212',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  smallPanelLabel: { color: '#7ed1ff', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  smallPanelValue: { color: '#f4f4f4', fontSize: 13, fontWeight: '800', marginTop: 2 },
+  cockpitGrid: { flexDirection: 'row', gap: 8, minHeight: 210 },
+  sideColumn: { flex: 1, gap: 8 },
+  metricCard: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2b2b2b',
+    backgroundColor: '#131313',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+  },
+  metricLabel: { color: '#89d8ff', fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  metricValue: { color: '#f8f8f8', fontSize: 20, fontWeight: '900' },
   stopwatchPill: { backgroundColor: '#121212', borderWidth: 1, borderColor: '#2f2f2f', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' },
   stopwatchPillLabel: { color: '#ffd166', fontWeight: '900', letterSpacing: 2, fontSize: 12 },
   stopwatchPillValue: { color: '#ff4d4f', fontWeight: '900', fontSize: 20, lineHeight: 22 },
-  speedPriorityWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  speedPriorityValue: { color: '#ff3b3b', fontSize: 66, fontWeight: '900', lineHeight: 68 },
-  speedPriorityUnit: { color: '#ffd7d7', fontSize: 20, fontWeight: '700', marginBottom: 10 },
-  meta: { color: '#ddd', fontSize: 18 },
   countdown: { color: '#ffd166', fontSize: 56, fontWeight: '900' },
   warning: { color: '#ffd166', textAlign: 'center', marginTop: 8 },
   primaryBtn: { backgroundColor: '#b82020', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 44, marginTop: 12 },
