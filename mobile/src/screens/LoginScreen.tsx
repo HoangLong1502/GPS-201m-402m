@@ -27,7 +27,10 @@ export const LoginScreen = () => {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         if (status === 401) {
-          Alert.alert('Đăng nhập thất bại', 'Sai số điện thoại hoặc mật khẩu');
+          Alert.alert('Đăng nhập thất bại', 'Chưa có tài khoản hoặc sai mật khẩu. Bạn hãy đăng ký nếu chưa có tài khoản.', [
+            { text: 'Để sau', style: 'cancel' },
+            { text: 'Đăng ký ngay', onPress: () => setIsRegisterMode(true) },
+          ]);
           return;
         }
         if (status === 409) {
@@ -47,6 +50,8 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.speedStripeTop} />
+      <View style={styles.speedStripeBottom} />
       <Text style={styles.title}>{isRegisterMode ? 'Đăng ký tay đua' : 'Đăng nhập đường đua'}</Text>
       <Text style={styles.subtitle}>Số điện thoại + mật khẩu bảo mật</Text>
       {isRegisterMode && (
@@ -76,20 +81,64 @@ export const LoginScreen = () => {
       />
       <Pressable style={styles.button} onPress={onLogin} disabled={isLoading}>
         <Text style={styles.buttonText}>
-          {isLoading ? 'Đang xử lý...' : isRegisterMode ? 'Tạo tài khoản' : 'Vào đường đua'}
+          {isLoading ? 'Đang xử lý...' : isRegisterMode ? 'Tạo tài khoản' : ' ĐĂNG NHẬP'}
         </Text>
       </Pressable>
-      <Pressable onPress={() => setIsRegisterMode((prev) => !prev)}>
-        <Text style={styles.toggle}>
-          {isRegisterMode ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}
-        </Text>
-      </Pressable>
+      <View style={styles.modeRow}>
+        <Pressable
+          style={[styles.modeButton, !isRegisterMode && styles.modeButtonActive]}
+          onPress={() => setIsRegisterMode(false)}
+          disabled={isLoading}
+        >
+          <Text style={[styles.modeButtonText, !isRegisterMode && styles.modeButtonTextActive]}>Đăng nhập</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.modeButton, isRegisterMode && styles.modeButtonActive]}
+          onPress={() => setIsRegisterMode(true)}
+          disabled={isLoading}
+        >
+          <Text style={[styles.modeButtonText, isRegisterMode && styles.modeButtonTextActive]}>Đăng ký</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080808', justifyContent: 'center', padding: 20, gap: 12 },
+  container: { flex: 1, backgroundColor: '#050507', justifyContent: 'center', padding: 20, gap: 12 },
+  speedStripeTop: {
+    position: 'absolute',
+    top: 140,
+    right: -40,
+    width: 220,
+    height: 24,
+    backgroundColor: 'rgba(184,32,32,0.26)',
+    transform: [{ rotate: '-12deg' }],
+    borderRadius: 24,
+  },
+  speedStripeBottom: {
+    position: 'absolute',
+    bottom: 120,
+    left: -50,
+    width: 240,
+    height: 20,
+    backgroundColor: 'rgba(255,77,79,0.2)',
+    transform: [{ rotate: '-12deg' }],
+    borderRadius: 20,
+  },
+  modeRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  modeButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#2f2f2f',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#121212',
+  },
+  modeButtonActive: { backgroundColor: '#b82020', borderColor: '#b82020' },
+  modeButtonText: { color: '#d0d0d0', fontWeight: '600' },
+  modeButtonTextActive: { color: '#fff' },
   title: { color: '#ff4d4f', fontSize: 31, fontWeight: '900' },
   subtitle: { color: '#c4c4c4' },
   input: {
@@ -103,5 +152,4 @@ const styles = StyleSheet.create({
   },
   button: { backgroundColor: '#b82020', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 4 },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  toggle: { color: '#ffb1b1', textAlign: 'center', marginTop: 6 },
 });

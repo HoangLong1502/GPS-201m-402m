@@ -22,6 +22,8 @@ export const useTracking = () => {
   const maxSpeedRef = useRef<number>(0);
   const pathRef = useRef<Array<{ latitude: number; longitude: number }>>([]);
   const lastPathPointRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const lastSampleRef = useRef<{ latitude: number; longitude: number; timestamp: number } | null>(null);
+  const smoothedSpeedRef = useRef<number>(0);
 
   const stopInternal = useCallback(async () => {
     if (watchRef.current) {
@@ -70,6 +72,8 @@ export const useTracking = () => {
       maxSpeedRef.current = 0;
       pathRef.current = [];
       lastPathPointRef.current = null;
+      lastSampleRef.current = null;
+      smoothedSpeedRef.current = 0;
 
       for (let i = 3; i >= 1; i -= 1) {
         setCountdown(i);
@@ -87,12 +91,27 @@ export const useTracking = () => {
       watchRef.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          distanceInterval: 1,
-          timeInterval: 200,
+          distanceInterval: 0,
+          timeInterval: 100,
         },
-        async (location) => {
-          const speedKmh = Math.max(0, (location.coords.speed ?? 0) * 3.6);
-          setCurrentSpeed(speedKmh);
+        (location) => {
+          const now = location.timestamp || Date.now();
+          const speedFromSensor = location.coords.speed;
+          let speedKmh = Math.max(0, (speedFromSensor ?? 0) * 3.6);
+          if ((speedFromSensor === null || speedFromSensor === undefined) && lastSampleRef.current) {
+            const deltaMs = now - lastSampleRef.current.timestamp;
+            if (deltaMs > 0) {
+              const moved = haversineMeters(lastSampleRef.current, location.coords);
+              speedKmh = (moved / (deltaMs / 1000)) * 3.6;
+            }
+          }
+          // Smooth only UI speed (EMA), while keeping tracking logic realtime.
+          const alpha = 0.35;
+          const nextSmoothed =
+            smoothedSpeedRef.current <= 0 ? speedKmh : smoothedSpeedRef.current + alpha * (speedKmh - smoothedSpeedRef.current);
+          smoothedSpeedRef.current = speedKmh < 1 ? 0 : nextSmoothed;
+          setCurrentSpeed(smoothedSpeedRef.current);
+
           maxSpeedRef.current = Math.max(maxSpeedRef.current, speedKmh);
           setMaxSpeed(maxSpeedRef.current);
           if ((location.coords.accuracy ?? 100) > 20) {
@@ -114,9 +133,7 @@ export const useTracking = () => {
               const nextPath = [...pathRef.current, currentPoint];
               pathRef.current = nextPath;
               lastPathPointRef.current = currentPoint;
-              if (nextPath.length % 3 === 0) {
-                setPath(nextPath);
-              }
+              setPath(nextPath);
             }
           } else {
             pathRef.current = [currentPoint];
@@ -133,6 +150,11 @@ export const useTracking = () => {
             }
           }
           prevPointRef.current = location.coords;
+          lastSampleRef.current = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            timestamp: now,
+          };
         },
       );
     },
