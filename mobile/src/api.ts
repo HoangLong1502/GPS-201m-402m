@@ -2,10 +2,21 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { AuthResponse, BackendMode, LeaderboardItem, LeaderboardMode, Mode, TrackingResult, UserProfile } from './types';
 
-export const API_BASE_URL =
-  Platform.OS === 'web'
-    ? 'http://localhost:3000'
-    : 'http://192.168.100.133:3000';
+const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+const normalizedEnvApiUrl = envApiUrl ? envApiUrl.replace(/\/+$/, '') : undefined;
+
+const getFallbackApiUrl = () => {
+  if (Platform.OS === 'web') return 'http://localhost:3000';
+  return 'http://192.168.100.133:3000';
+};
+
+export const API_BASE_URL = normalizedEnvApiUrl ?? getFallbackApiUrl();
+
+if (!normalizedEnvApiUrl && !__DEV__) {
+  console.warn(
+    'EXPO_PUBLIC_API_URL is not set. Release builds may fail to connect outside your local network.',
+  );
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

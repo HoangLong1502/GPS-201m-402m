@@ -13,6 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "android": {
+      "package": "com.longvhse192032.gpsracer",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,6 +27,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "58e9428b-e7a6-4c7b-a65e-0af696f3c056"
+      }
     }
   }
 }
