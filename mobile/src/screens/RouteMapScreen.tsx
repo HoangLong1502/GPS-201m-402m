@@ -5,6 +5,7 @@ import { RootStackParamList } from '../AppNavigator';
 import { useAppContext } from '../context/AppContext';
 import { formatSpeed, formatTime } from '../utils';
 import { ResultMap } from '../components/ResultMap';
+import { AdMobBanner } from '../components/AdMobBanner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteMap'>;
 
@@ -13,11 +14,14 @@ export const RouteMapScreen = ({ navigation }: Props) => {
 
   if (!latestResult) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Chưa có hành trình</Text>
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.buttonLabel}>Về trang chính</Text>
-        </Pressable>
+      <View style={styles.root}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Chưa có hành trình</Text>
+          <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
+            <Text style={styles.buttonLabel}>Về trang chính</Text>
+          </Pressable>
+        </View>
+        <AdMobBanner />
       </View>
     );
   }
@@ -42,8 +46,9 @@ export const RouteMapScreen = ({ navigation }: Props) => {
       : null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bản đồ hành trình</Text>
+    <View style={styles.root}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Bản đồ hành trình</Text>
 
       {path.length >= 2 && region ? (
         <ResultMap path={path} region={region} />
@@ -91,14 +96,17 @@ export const RouteMapScreen = ({ navigation }: Props) => {
         </View>
       </View>
 
-      <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.buttonLabel}>Hoàn tất</Text>
-      </Pressable>
+        <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.buttonLabel}>Hoàn tất</Text>
+        </Pressable>
+      </View>
+      <AdMobBanner />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#090909' },
   container: { flex: 1, backgroundColor: '#090909', padding: 18, alignItems: 'center' },
   title: { color: '#ff4d4f', fontSize: 26, fontWeight: '900', marginTop: 6, marginBottom: 10 },
   summaryGrid: { width: '100%', marginTop: 4 },
