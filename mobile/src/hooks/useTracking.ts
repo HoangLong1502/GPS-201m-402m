@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { useCallback, useRef, useState } from 'react';
+import { Platform, unstable_batchedUpdates } from 'react-native';
 import { Mode, TrackingResult } from '../types';
 import { haversineMeters, targetDistanceByMode } from '../utils';
 
@@ -24,6 +25,7 @@ export const useTracking = () => {
   const lastPathPointRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const lastSampleRef = useRef<{ latitude: number; longitude: number; timestamp: number } | null>(null);
   const smoothedSpeedRef = useRef<number>(0);
+  const lastAccuracyWarnRef = useRef<boolean | undefined>(undefined);
 
   const stopInternal = useCallback(async () => {
     if (watchRef.current) {
@@ -84,16 +86,29 @@ export const useTracking = () => {
       setCountdown(null);
       startTimeRef.current = Date.now();
       setIsRunning(true);
+      const isGpsMode = mode === 'GPS';
+      const tickMs = isGpsMode ? 16 : 100;
       timerRef.current = setInterval(() => {
         setElapsed((Date.now() - startTimeRef.current) / 1000);
-      }, 100);
+      }, tickMs);
+
+      lastAccuracyWarnRef.current = undefined;
+
+      const watchOptions: Location.LocationOptions & {
+        activityType?: Location.ActivityType;
+        pausesUpdatesAutomatically?: boolean;
+      } = {
+        accuracy: Location.Accuracy.BestForNavigation,
+        distanceInterval: 0,
+        timeInterval: isGpsMode ? 1 : 100,
+      };
+      if (isGpsMode && Platform.OS === 'ios') {
+        watchOptions.activityType = Location.ActivityType.AutomotiveNavigation;
+        watchOptions.pausesUpdatesAutomatically = false;
+      }
 
       watchRef.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation,
-          distanceInterval: 0,
-          timeInterval: 100,
-        },
+        watchOptions,
         (location) => {
           const now = location.timestamp || Date.now();
           const speedFromSensor = location.coords.speed;
@@ -105,19 +120,29 @@ export const useTracking = () => {
               speedKmh = (moved / (deltaMs / 1000)) * 3.6;
             }
           }
-          // Smooth only UI speed (EMA), while keeping tracking logic realtime.
-          const alpha = 0.35;
-          const nextSmoothed =
-            smoothedSpeedRef.current <= 0 ? speedKmh : smoothedSpeedRef.current + alpha * (speedKmh - smoothedSpeedRef.current);
-          smoothedSpeedRef.current = speedKmh < 1 ? 0 : nextSmoothed;
-          setCurrentSpeed(smoothedSpeedRef.current);
+
+          const currentMode = modeRef.current;
+          const useRawSpeed = currentMode === 'GPS' || currentMode === 'RACE_201' || currentMode === 'RACE_402';
+
+          let displaySpeed: number;
+          if (useRawSpeed) {
+            displaySpeed = speedKmh < 0.5 ? 0 : speedKmh;
+            smoothedSpeedRef.current = displaySpeed;
+          } else {
+            const alpha = 0.35;
+            const nextSmoothed =
+              smoothedSpeedRef.current <= 0 ? speedKmh : smoothedSpeedRef.current + alpha * (speedKmh - smoothedSpeedRef.current);
+            smoothedSpeedRef.current = speedKmh < 1 ? 0 : nextSmoothed;
+            displaySpeed = smoothedSpeedRef.current;
+          }
 
           maxSpeedRef.current = Math.max(maxSpeedRef.current, speedKmh);
-          setMaxSpeed(maxSpeedRef.current);
-          if ((location.coords.accuracy ?? 100) > 20) {
-            setAccuracyWarning('Độ chính xác GPS thấp, hãy di chuyển ra khu vực thoáng.');
-          } else {
-            setAccuracyWarning(undefined);
+
+          const lowAccuracy = (location.coords.accuracy ?? 100) > 20;
+          const nextWarn = lowAccuracy ? 'Độ chính xác GPS thấp, hãy di chuyển ra khu vực thoáng.' : undefined;
+          const accuracyChanged = lastAccuracyWarnRef.current !== lowAccuracy;
+          if (accuracyChanged) {
+            lastAccuracyWarnRef.current = lowAccuracy;
           }
 
           const currentPoint = {
@@ -125,27 +150,29 @@ export const useTracking = () => {
             longitude: location.coords.longitude,
           };
 
-          // Thêm điểm đường đi (downsample nhẹ để giảm lag UI)
+          let pathUpdate: Array<{ latitude: number; longitude: number }> | null = null;
           if (lastPathPointRef.current) {
             const moved = haversineMeters(lastPathPointRef.current as any, currentPoint as any);
-            // Ngưỡng thấp để đảm bảo STOPWATCH/GPS có đủ điểm để vẽ map
-            if (moved >= 1) {
+            const minMove = 1;
+            if (moved >= minMove) {
               const nextPath = [...pathRef.current, currentPoint];
               pathRef.current = nextPath;
               lastPathPointRef.current = currentPoint;
-              setPath(nextPath);
+              const shouldFlushPath = currentMode !== 'GPS' || nextPath.length % 2 === 0;
+              if (shouldFlushPath) {
+                pathUpdate = nextPath;
+              }
             }
           } else {
             pathRef.current = [currentPoint];
             lastPathPointRef.current = currentPoint;
-            setPath(pathRef.current);
+            pathUpdate = pathRef.current;
           }
 
           if (prevPointRef.current) {
             const delta = haversineMeters(prevPointRef.current, location.coords);
             distanceRef.current += delta;
-            setDistance(distanceRef.current);
-            if (distanceRef.current >= targetDistanceByMode(modeRef.current)) {
+            if (distanceRef.current >= targetDistanceByMode(currentMode)) {
               finish().catch(() => null);
             }
           }
@@ -155,6 +182,30 @@ export const useTracking = () => {
             longitude: location.coords.longitude,
             timestamp: now,
           };
+
+          if (currentMode === 'GPS') {
+            unstable_batchedUpdates(() => {
+              setCurrentSpeed(displaySpeed);
+              setMaxSpeed(maxSpeedRef.current);
+              setDistance(distanceRef.current);
+              if (pathUpdate) {
+                setPath(pathUpdate);
+              }
+              if (accuracyChanged) {
+                setAccuracyWarning(nextWarn);
+              }
+            });
+          } else {
+            setCurrentSpeed(displaySpeed);
+            setMaxSpeed(maxSpeedRef.current);
+            if (accuracyChanged) {
+              setAccuracyWarning(nextWarn);
+            }
+            setDistance(distanceRef.current);
+            if (pathUpdate) {
+              setPath(pathUpdate);
+            }
+          }
         },
       );
     },

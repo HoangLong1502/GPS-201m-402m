@@ -5,6 +5,7 @@ import { RootStackParamList } from '../AppNavigator';
 import { useAppContext } from '../context/AppContext';
 import { formatSpeed, formatTime } from '../utils';
 import { ResultMap } from '../components/ResultMap';
+import { AdMobBanner } from '../components/AdMobBanner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
@@ -13,11 +14,14 @@ export const ResultScreen = ({ navigation }: Props) => {
 
   if (!latestResult) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Chưa có kết quả</Text>
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.buttonLabel}>Về trang chính</Text>
-        </Pressable>
+      <View style={styles.root}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Chưa có kết quả</Text>
+          <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
+            <Text style={styles.buttonLabel}>Về trang chính</Text>
+          </Pressable>
+        </View>
+        <AdMobBanner />
       </View>
     );
   }
@@ -45,68 +49,72 @@ export const ResultScreen = ({ navigation }: Props) => {
       : null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Kết quả ({latestResult.mode})</Text>
-      <View style={styles.primaryTopCard}>
-        <Text style={styles.primaryTopLabel}>{isRaceMode ? 'RACE TIME' : 'MAX SPEED'}</Text>
-        <Text style={styles.primaryTopValue}>{isRaceMode ? formatTime(latestResult.time) : formatSpeed(latestResult.maxSpeed)}</Text>
-      </View>
+    <View style={styles.root}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Kết quả ({latestResult.mode})</Text>
+        <View style={styles.primaryTopCard}>
+          <Text style={styles.primaryTopLabel}>{isRaceMode ? 'RACE TIME' : 'MAX SPEED'}</Text>
+          <Text style={styles.primaryTopValue}>{isRaceMode ? formatTime(latestResult.time) : formatSpeed(latestResult.maxSpeed)}</Text>
+        </View>
 
-      <View style={styles.summaryDash}>
-        <View style={styles.summaryLedRow}>
-          {Array.from({ length: 12 }, (_, idx) => (
-            <View
-              key={`result-led-${idx}`}
-              style={[
-                styles.summaryLedDot,
-                idx < 9 ? (isRaceMode ? styles.summaryLedRace : styles.summaryLedGps) : styles.summaryLedOff,
-              ]}
-            />
-          ))}
-        </View>
-        <View style={styles.summaryTopRow}>
-          <View style={styles.summaryTopCell}>
-            <Text style={styles.summaryTopLabel}>MODE</Text>
-            <Text style={styles.summaryTopValue}>{latestResult.mode}</Text>
+        <View style={styles.summaryDash}>
+          <View style={styles.summaryLedRow}>
+            {Array.from({ length: 12 }, (_, idx) => (
+              <View
+                key={`result-led-${idx}`}
+                style={[
+                  styles.summaryLedDot,
+                  idx < 9 ? (isRaceMode ? styles.summaryLedRace : styles.summaryLedGps) : styles.summaryLedOff,
+                ]}
+              />
+            ))}
           </View>
-          <View style={styles.summaryTopCell}>
-            <Text style={styles.summaryTopLabel}>TIME</Text>
-            <Text style={styles.summaryTopValue}>{formatTime(latestResult.time)}</Text>
-          </View>
-          <View style={styles.summaryTopCell}>
-            <Text style={styles.summaryTopLabel}>DIST</Text>
-            <Text style={styles.summaryTopValue}>{latestResult.distance.toFixed(1)}m</Text>
-          </View>
-        </View>
-        <View style={styles.summaryMetricRow}>
-          <View style={styles.summaryMetricCell}>
-            <Text style={styles.summaryMetricLabel}>MAX SPEED</Text>
-            <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.maxSpeed)}</Text>
-          </View>
-          <View style={styles.summaryMetricCell}>
-            <Text style={styles.summaryMetricLabel}>RESULT</Text>
-            <Text style={styles.summaryMetricValue}>{isRaceMode ? 'DRAG DONE' : isGpsMode ? 'GPS RUN' : 'STOPWATCH'}</Text>
-          </View>
-        </View>
-        {isStopwatchMode && (
-          <View style={styles.summaryMetricRow}>
-            <View style={styles.summaryMetricCellWide}>
-              <Text style={styles.summaryMetricLabel}>AVG SPEED</Text>
-              <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.avgSpeed ?? 0)}</Text>
+          <View style={styles.summaryTopRow}>
+            <View style={styles.summaryTopCell}>
+              <Text style={styles.summaryTopLabel}>MODE</Text>
+              <Text style={styles.summaryTopValue}>{latestResult.mode}</Text>
+            </View>
+            <View style={styles.summaryTopCell}>
+              <Text style={styles.summaryTopLabel}>TIME</Text>
+              <Text style={styles.summaryTopValue}>{formatTime(latestResult.time)}</Text>
+            </View>
+            <View style={styles.summaryTopCell}>
+              <Text style={styles.summaryTopLabel}>DIST</Text>
+              <Text style={styles.summaryTopValue}>{latestResult.distance.toFixed(1)}m</Text>
             </View>
           </View>
-        )}
-      </View>
+          <View style={styles.summaryMetricRow}>
+            <View style={styles.summaryMetricCell}>
+              <Text style={styles.summaryMetricLabel}>MAX SPEED</Text>
+              <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.maxSpeed)}</Text>
+            </View>
+            <View style={styles.summaryMetricCell}>
+              <Text style={styles.summaryMetricLabel}>RESULT</Text>
+              <Text style={styles.summaryMetricValue}>{isRaceMode ? 'DRAG DONE' : isGpsMode ? 'GPS RUN' : 'STOPWATCH'}</Text>
+            </View>
+          </View>
+          {isStopwatchMode && (
+            <View style={styles.summaryMetricRow}>
+              <View style={styles.summaryMetricCellWide}>
+                <Text style={styles.summaryMetricLabel}>AVG SPEED</Text>
+                <Text style={styles.summaryMetricValue}>{formatSpeed(latestResult.avgSpeed ?? 0)}</Text>
+              </View>
+            </View>
+          )}
+        </View>
 
-      {isStopwatchMode && path.length >= 2 && region && <ResultMap path={path} region={region} />}
-      <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.buttonLabel}>Hoàn tất</Text>
-      </Pressable>
+        {isStopwatchMode && path.length >= 2 && region && <ResultMap path={path} region={region} />}
+        <Pressable style={styles.button} onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.buttonLabel}>Hoàn tất</Text>
+        </Pressable>
+      </View>
+      <AdMobBanner />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#090909' },
   container: { flex: 1, backgroundColor: '#090909', justifyContent: 'center', alignItems: 'center', gap: 10, padding: 20 },
   title: { color: '#ff4d4f', fontSize: 28, fontWeight: '900' },
   primaryTopCard: {

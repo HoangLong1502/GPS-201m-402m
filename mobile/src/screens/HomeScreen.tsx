@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
 import { Mode } from '../types';
 import { useAppContext } from '../context/AppContext';
+import { AdMobBanner } from '../components/AdMobBanner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -28,7 +29,8 @@ export const HomeScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.root}>
+      <View style={styles.container}>
       <Pressable style={styles.profileTopBtn} onPress={() => navigation.navigate('Profile')}>
         <Text style={styles.profileTopLabel}>Hồ sơ</Text>
       </Pressable>
@@ -81,11 +83,14 @@ export const HomeScreen = ({ navigation }: Props) => {
           </View>
         </View>
       </Modal>
+      </View>
+      <AdMobBanner />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#090909' },
   container: { flex: 1, backgroundColor: '#090909', padding: 20, justifyContent: 'center', gap: 12 },
   profileTopBtn: {
     position: 'absolute',
