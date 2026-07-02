@@ -22,6 +22,9 @@ async function bootstrap() {
   app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
   });
-  await app.listen(process.env.PORT ?? 3000, process.env.HOST ?? '0.0.0.0');
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
+  console.log(`GPS backend listening on http://${host}:${port}`);
 }
 bootstrap();
