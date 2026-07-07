@@ -37,10 +37,12 @@ class TrackingEngine(
     private val scope: CoroutineScope,
 ) {
     companion object {
-        // 10 Hz update target for near realtime speed display.
-        private const val GPS_INTERVAL_MS = 100L
-        private const val GPS_MIN_INTERVAL_MS = 50L
+        // Request GPS fixes as fast as the hardware/fused provider can deliver.
+        private const val GPS_INTERVAL_MS = 0L
+        private const val GPS_MIN_INTERVAL_MS = 0L
         private const val OTHER_INTERVAL_MS = 200L
+        // UI clock refresh (elapsed timer) at ~30 fps for a smooth realtime feel.
+        private const val UI_TICK_MS = 33L
     }
 
     private val fused = LocationServices.getFusedLocationProviderClient(context)
@@ -81,13 +83,12 @@ class TrackingEngine(
 
         startTimeMs = System.currentTimeMillis()
         val isGpsMode = mode == RaceMode.GPS
-        val intervalMs = if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS
 
         timerJob = scope.launch {
             while (_state.value.isRunning) {
                 val elapsed = (System.currentTimeMillis() - startTimeMs) / 1000.0
                 _state.value = _state.value.copy(elapsed = elapsed)
-                delay(intervalMs)
+                delay(UI_TICK_MS)
             }
         }
 
@@ -96,7 +97,8 @@ class TrackingEngine(
             if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS,
         )
             .setMinUpdateIntervalMillis(if (isGpsMode) GPS_MIN_INTERVAL_MS else 100L)
-            .setMaxUpdateDelayMillis(if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS)
+            // 0 = deliver each fix immediately (no batching delay).
+            .setMaxUpdateDelayMillis(0L)
             .setWaitForAccurateLocation(false)
             .setMinUpdateDistanceMeters(0f)
             .build()
