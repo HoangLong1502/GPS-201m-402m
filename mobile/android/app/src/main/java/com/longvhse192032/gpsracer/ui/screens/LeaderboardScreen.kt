@@ -45,7 +45,17 @@ fun LeaderboardScreen(user: UserProfile?, onBack: () -> Unit) {
     var vehicleData by remember { mutableStateOf<List<LeaderboardItem>>(emptyList()) }
     var showVehicle by remember { mutableStateOf(false) }
 
-    LaunchedEffect(mode, showVehicle, user?.vehicleName) {
+    val profileComplete = user != null &&
+        !user.avatar.isNullOrBlank() &&
+        !user.vehicleName.isNullOrBlank() &&
+        !user.engineType.isNullOrBlank()
+
+    LaunchedEffect(mode, showVehicle, user?.vehicleName, profileComplete) {
+        if (!profileComplete) {
+            globalData = emptyList()
+            vehicleData = emptyList()
+            return@LaunchedEffect
+        }
         try {
             globalData = ApiClient.api.globalLeaderboard(mode)
         } catch (_: Exception) {
@@ -76,6 +86,12 @@ fun LeaderboardScreen(user: UserProfile?, onBack: () -> Unit) {
             )
         }
         Text("BẢNG XẾP HẠNG", color = AccentRed, fontSize = 22.sp, fontWeight = FontWeight.Black)
+
+        if (!profileComplete) {
+            ProfileRequiredNotice(user)
+            return@Column
+        }
+
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LeaderboardMode.entries.forEach { item ->
                 val active = mode == item
@@ -123,6 +139,58 @@ fun LeaderboardScreen(user: UserProfile?, onBack: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProfileRequiredNotice(user: UserProfile?) {
+    val missing = buildList {
+        if (user?.avatar.isNullOrBlank()) add("ảnh xe")
+        if (user?.vehicleName.isNullOrBlank()) add("tên xe")
+        if (user?.engineType.isNullOrBlank()) add("phân khối")
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 40.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF141414))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("🏁", fontSize = 40.sp)
+        Text(
+            "Chưa thể xem bảng xếp hạng",
+            color = Color(0xFFFFD166),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Text(
+            "Bạn cần cập nhật hồ sơ đầy đủ (ảnh xe, tên xe, phân khối) mới được lên bảng xếp hạng.",
+            color = Color(0xFFCFCFCF),
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        if (missing.isNotEmpty()) {
+            Text(
+                "Còn thiếu: ${missing.joinToString(", ")}",
+                color = Color(0xFFFF8A8A),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 10.dp),
+            )
+        }
+        Text(
+            "Vào mục Profile để cập nhật nhé.",
+            color = Color(0xFF9A9A9A),
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 10.dp),
+        )
     }
 }
 
