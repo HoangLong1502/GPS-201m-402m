@@ -47,7 +47,7 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{isRegisterMode ? 'Đăng ký tay đua' : 'Đăng nhập đường đua'}</Text>
+      <Text style={styles.title}>{isRegisterMode ? 'Đăng ký' : 'Đăng nhập'}</Text>
       <Text style={styles.subtitle}>Số điện thoại + mật khẩu bảo mật</Text>
       {isRegisterMode && (
         <TextInput
