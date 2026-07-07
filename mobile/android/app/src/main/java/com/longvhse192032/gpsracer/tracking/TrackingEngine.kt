@@ -36,6 +36,13 @@ class TrackingEngine(
     private val context: Context,
     private val scope: CoroutineScope,
 ) {
+    companion object {
+        // 10 Hz update target for near realtime speed display.
+        private const val GPS_INTERVAL_MS = 100L
+        private const val GPS_MIN_INTERVAL_MS = 50L
+        private const val OTHER_INTERVAL_MS = 200L
+    }
+
     private val fused = LocationServices.getFusedLocationProviderClient(context)
 
     private val _state = MutableStateFlow(TrackingUiState())
@@ -74,7 +81,7 @@ class TrackingEngine(
 
         startTimeMs = System.currentTimeMillis()
         val isGpsMode = mode == RaceMode.GPS
-        val intervalMs = if (isGpsMode) 16L else 100L
+        val intervalMs = if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS
 
         timerJob = scope.launch {
             while (_state.value.isRunning) {
@@ -86,15 +93,21 @@ class TrackingEngine(
 
         val request = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            if (isGpsMode) 1L else 100L,
+            if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS,
         )
-            .setMinUpdateIntervalMillis(if (isGpsMode) 1L else 100L)
+            .setMinUpdateIntervalMillis(if (isGpsMode) GPS_MIN_INTERVAL_MS else 100L)
+            .setMaxUpdateDelayMillis(if (isGpsMode) GPS_INTERVAL_MS else OTHER_INTERVAL_MS)
+            .setWaitForAccurateLocation(false)
             .setMinUpdateDistanceMeters(0f)
             .build()
 
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { handleLocation(it) }
+                if (result.locations.isNotEmpty()) {
+                    result.locations.forEach(::handleLocation)
+                } else {
+                    result.lastLocation?.let(::handleLocation)
+                }
             }
         }
         locationCallback = callback
