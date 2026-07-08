@@ -1,3 +1,8 @@
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+cd F:\GPS-201-402\mobile\android
+.\gradlew.bat assembleDebug
+.\gradlew.bat assembleRelease
+
 # Build APK (Kotlin native)
 
 App đã chuyển sang **Kotlin + Jetpack Compose** (không còn React Native runtime).
