@@ -76,7 +76,7 @@ export const LoginScreen = () => {
       />
       <Pressable style={styles.button} onPress={onLogin} disabled={isLoading}>
         <Text style={styles.buttonText}>
-          {isLoading ? 'Đang xử lý...' : isRegisterMode ? 'Tạo tài khoản' : 'Vào đường đua'}
+          {isLoading ? 'Đang xử lý...' : isRegisterMode ? 'Tạo tài khoản' : 'ĐĂNG NHẬP'}
         </Text>
       </Pressable>
       <Pressable onPress={() => setIsRegisterMode((prev) => !prev)}>

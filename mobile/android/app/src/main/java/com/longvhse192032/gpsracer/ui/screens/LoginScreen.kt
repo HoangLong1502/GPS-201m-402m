@@ -92,7 +92,7 @@ fun LoginScreen(appViewModel: AppViewModel) {
                     .border(2.dp, AccentRed, CircleShape),
             )
             Spacer(Modifier.height(14.dp))
-            Text("ĐƯỜNG ĐUA", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+            Text("Bấm GPS - Bấm Giờ", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
             Text(
                 if (isRegister) "Tạo tài khoản tay đua mới" else "Tăng tốc và chinh phục bảng xếp hạng",
                 color = Color(0xFFB8B8B8),
