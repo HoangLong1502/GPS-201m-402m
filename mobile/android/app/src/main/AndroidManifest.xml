@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:name=".GpsRacerApplication"
         android:allowBackup="true"
         android:icon="@drawable/app_logo"
         android:label="@string/app_name"
@@ -16,11 +15,6 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.GpsRacer"
         tools:targetApi="35">
-
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5697795948826934~6014442295"
-            tools:replace="android:value" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

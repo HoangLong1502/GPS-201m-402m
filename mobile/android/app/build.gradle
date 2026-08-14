@@ -6,15 +6,12 @@ plugins {
 
 def envFile = rootProject.file("../.env")
 def apiBaseUrl = "http://192.168.100.133:3000"
-def admobBannerId = "ca-app-pub-3940256099942544/9214589741"
 def mapsApiKey = ""
 
 if (envFile.exists()) {
     envFile.eachLine { line ->
         if (line.startsWith("EXPO_PUBLIC_API_URL=")) {
             apiBaseUrl = line.substring("EXPO_PUBLIC_API_URL=".length()).trim()
-        } else if (line.startsWith("EXPO_PUBLIC_ADMOB_BANNER_ANDROID_ID=")) {
-            admobBannerId = line.substring("EXPO_PUBLIC_ADMOB_BANNER_ANDROID_ID=".length()).trim()
         }
     }
 }
@@ -43,7 +40,6 @@ android {
         versionName "1.0.1"
 
         buildConfigField "String", "API_BASE_URL", "\"${apiBaseUrl}\""
-        buildConfigField "String", "ADMOB_BANNER_ID", "\"${admobBannerId}\""
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
@@ -94,7 +90,6 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:21.3.0"
     implementation "com.google.android.gms:play-services-maps:19.0.0"
     implementation "com.google.maps.android:maps-compose:6.2.1"
-    implementation "com.google.android.gms:play-services-ads:23.6.0"
 
     implementation "io.coil-kt:coil-compose:2.7.0"
 

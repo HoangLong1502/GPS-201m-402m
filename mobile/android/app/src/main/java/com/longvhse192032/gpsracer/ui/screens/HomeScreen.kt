@@ -39,7 +39,6 @@ import com.longvhse192032.gpsracer.R
 import com.longvhse192032.gpsracer.data.RaceMode
 import com.longvhse192032.gpsracer.data.UserProfile
 import com.longvhse192032.gpsracer.ui.AppViewModel
-import com.longvhse192032.gpsracer.ui.components.AdMobBanner
 import com.longvhse192032.gpsracer.ui.theme.AccentRed
 import com.longvhse192032.gpsracer.ui.theme.AccentRedDark
 import com.longvhse192032.gpsracer.ui.theme.BgDark
@@ -100,7 +99,6 @@ fun HomeScreen(
                 Text("Profile", color = Color(0xFFFFB3B3), fontWeight = FontWeight.Bold)
             }
         }
-        AdMobBanner()
     }
 
     if (showDonate) {

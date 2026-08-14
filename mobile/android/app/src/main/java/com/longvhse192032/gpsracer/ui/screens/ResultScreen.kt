@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.longvhse192032.gpsracer.data.RaceMode
 import com.longvhse192032.gpsracer.data.TrackingResult
-import com.longvhse192032.gpsracer.ui.components.AdMobBanner
 import com.longvhse192032.gpsracer.ui.components.MetricCard
 import com.longvhse192032.gpsracer.ui.components.PrimaryTopCard
 import com.longvhse192032.gpsracer.ui.components.ResultMapView
@@ -83,7 +82,6 @@ fun ResultScreen(result: TrackingResult?, onHome: () -> Unit, onBack: () -> Unit
                 }
             }
         }
-        AdMobBanner()
     }
 }
 
