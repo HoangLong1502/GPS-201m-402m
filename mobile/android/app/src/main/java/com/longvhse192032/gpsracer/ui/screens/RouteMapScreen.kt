@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.longvhse192032.gpsracer.data.TrackingResult
-import com.longvhse192032.gpsracer.ui.components.AdMobBanner
 import com.longvhse192032.gpsracer.ui.components.ResultMapView
 import com.longvhse192032.gpsracer.ui.components.regionFromPath
 import com.longvhse192032.gpsracer.ui.theme.AccentRed
@@ -85,6 +84,5 @@ fun RouteMapScreen(result: TrackingResult?, onHome: () -> Unit, onBack: () -> Un
                 }
             }
         }
-        AdMobBanner()
     }
 }
